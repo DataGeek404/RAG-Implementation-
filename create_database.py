@@ -1,21 +1,20 @@
-# from langchain.document_loaders import DirectoryLoader
+# Only import what's necessary
 from langchain_community.document_loaders import DirectoryLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.schema import Document
-# from langchain.embeddings import OpenAIEmbeddings
 from langchain_openai import OpenAIEmbeddings
 from langchain_community.vectorstores import Chroma
-import openai 
+
+import openai
 from dotenv import load_dotenv
 import os
 import shutil
 
-# Load environment variables. Assumes that project contains .env file with API keys
+# Load environment variables from .env
 load_dotenv()
-#---- Set OpenAI API key 
-# Change environment variable name from "OPENAI_API_KEY" to the name given in 
-# your .env file.
-openai.api_key = os.environ['OPENAI_API_KEY']
+
+# Set the OpenAI API key
+openai.api_key = os.environ.get("OPENAI_API_KEY")
 
 CHROMA_PATH = "chroma"
 DATA_PATH = "data/books"
@@ -47,19 +46,21 @@ def split_text(documents: list[Document]):
     chunks = text_splitter.split_documents(documents)
     print(f"Split {len(documents)} documents into {len(chunks)} chunks.")
 
-    document = chunks[10]
-    print(document.page_content)
-    print(document.metadata)
+    # Print an example chunk for inspection
+    if chunks:
+        document = chunks[min(10, len(chunks) - 1)]
+        print(document.page_content)
+        print(document.metadata)
 
     return chunks
 
 
 def save_to_chroma(chunks: list[Document]):
-    # Clear out the database first.
+    # Delete previous Chroma DB if it exists
     if os.path.exists(CHROMA_PATH):
         shutil.rmtree(CHROMA_PATH)
 
-    # Create a new DB from the documents.
+    # Create a new DB from the document chunks
     db = Chroma.from_documents(
         chunks, OpenAIEmbeddings(), persist_directory=CHROMA_PATH
     )
